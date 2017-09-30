@@ -1,10 +1,11 @@
-const {ipcRenderer} = require('electron');
+const {ipcRenderer, clipboard} = require('electron');
 
 class BookmarkView {
   constructor(){
     this._btnHome = document.querySelector('#btn_home');
     this._btnGithub = document.querySelector('#btn_github');
     this._dataDom = document.querySelector('#data');
+
 
     //DOM 이벤트 함수를 바인딩
     this._bindDomEvent();
@@ -15,10 +16,15 @@ class BookmarkView {
 
   _bindDomEvent(){
     this._btnHome.addEventListener('click', () => {
-
+      this._changeType('home');
     })
     this._btnGithub.addEventListener('click', () => {
+      this._changeType('github');
+    })
+    document.addEventListener('paste', () => {
+      const text = clipboard.readText();
 
+      ipcRenderer.send('paste', text);
     })
   }
 
@@ -47,6 +53,18 @@ class BookmarkView {
         </li>
       `
     }).join('');
+  }
+
+  _changeType(type){
+    if(type === 'home'){
+      this._btnHome.classList.add('active');
+      this._btnGithub.classList.remove('active');
+    }else if(type === 'github'){
+      this._btnHome.classList.remove('active');
+      this._btnGithub.classList.add('active');
+    }
+
+    ipcRenderer.send('type', type);
   }
 }
 

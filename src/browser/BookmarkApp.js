@@ -1,7 +1,11 @@
-const {app, Tray, Menu, BrowserWindow, ipcMain} = require('electron');
+const {app, Tray, Menu, BrowserWindow, ipcMain, dialog} = require('electron');
 const path = require('path');
 const fs = require('fs');
 const url = require('url');
+
+const request = require('superagent');//http통신
+const getTitle = require('get-title');
+
 
 const HTML = url.format({
   protocol: 'file',
@@ -15,6 +19,9 @@ class BookmarkApp{
   constructor(){
     this._tray = null;
     this._win = null;
+    this._data = null;
+    this._type = 'home';
+
     app.on('ready', this._ready.bind(this));
   }
 
@@ -57,13 +64,39 @@ class BookmarkApp{
     this._win.webContents.openDevTools();
 
   //ipc설정
-    
+    /*ipcMain.on('type', (event, arg) => {
+      console.log(arg);
+    })*/
+    ipcMain.on('type', this._ipcType.bind(this));
+    ipcMain.on('paste', this._ipcPaste.bind(this));
+  }
+  
+  async _ipcPaste(event, arg){
+    if(arg.indexOf('https://') > -1 || arg.indexOf('http://') > -1 ){
+      let response = null;
+      try{
+        response = await request.get(arg);
+      }catch(err){
+        dialog.showErrorBox('경고', 'url은 맞는데, request가 잘못 됬습니다.');
+      }
+
+      if(response){
+        console.log(response.res.text);
+      }
+    }else{
+      dialog.showErrorBox('경고', '잘못된 url 입니다');
+    }
+  }
+
+  _ipcType(event, arg){
+    this._type = arg;
+    this._update();
   }
 
   _update() {
-    this._win.webContents.send('data', this._data);
+    const data = this._data.filter(item => item.type == this._type)
+    this._win.webContents.send('data', data);
   }
-
 
   _initData() {
     // 최초실행시 json 생성
