@@ -1,12 +1,16 @@
-const {app, Tray, Menu, BrowserWindow} = require('electron');
+const {app, Tray, Menu, BrowserWindow, ipcMain} = require('electron');
 const path = require('path');
+const fs = require('fs');
 const url = require('url');
 
 const HTML = url.format({
   protocol: 'file',
   pathname: path.join(__dirname, '../../static/index.html')
-})
+});
 
+//local 파일경로
+const DATA_PATH = path.join(app.getPath('userData'), 'data.json');
+console.log(DATA_PATH, '<< [ DATA_PATH ]');
 class BookmarkApp{
   constructor(){
     this._tray = null;
@@ -16,6 +20,9 @@ class BookmarkApp{
 
   _ready(){
     console.log('ready');
+    this._initData();
+
+    console.log(this._data);
 
   //트레이 설정
     this._tray = new Tray(path.join(__dirname, '../../static/icon.png'));
@@ -42,9 +49,7 @@ class BookmarkApp{
       frame: false,
     });
 
-    this._win.once('ready-to-show', () => {
-      this._win.show();
-    });
+    this._win.once('ready-to-show', this._update.bind(this));
     this._win.on('blur', () => {
       this._win.hide();
     })
@@ -53,6 +58,21 @@ class BookmarkApp{
 
   //ipc설정
     
+  }
+
+  _update() {
+    this._win.webContents.send('data', this._data);
+  }
+
+
+  _initData() {
+    // 최초실행시 json 생성
+    if(!fs.existsSync(DATA_PATH)){
+      fs.writeFileSync(DATA_PATH, JSON.stringify([]));
+    }
+
+    const data = fs.readFileSync(DATA_PATH);
+    this._data = JSON.parse(data.toString());
   }
 
   _toggle() {
