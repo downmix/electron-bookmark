@@ -81,7 +81,16 @@ class BookmarkApp{
       }
 
       if(response){
-        console.log(response.res.text);
+        const title = await getTitle(response.res.text);
+        const item = {
+          url: arg,
+          title,
+          type: this._type
+        }
+
+        this._data.push(item);
+        fs.writeFileSync(DATA_PATH, JSON.stringify(this._data));
+        this._update();
       }
     }else{
       dialog.showErrorBox('경고', '잘못된 url 입니다');
