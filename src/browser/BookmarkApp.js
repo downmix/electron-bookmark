@@ -181,6 +181,12 @@ class BookmarkApp{
             click: () => {
               const ignored = this._saveUrl('github', clipboard.readText());
             }
+          },
+          {
+            label: 'Docs',
+            click: () => {
+              const ignored = this._saveUrl('docs', clipboard.readText());
+            }
           }
         ]
       },
