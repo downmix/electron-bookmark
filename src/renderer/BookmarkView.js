@@ -1,4 +1,4 @@
-const {ipcRenderer, clipboard} = require('electron');
+const {ipcRenderer, clipboard, shell} = require('electron');
 
 class BookmarkView {
   constructor(){
@@ -31,6 +31,8 @@ class BookmarkView {
   _bindIpcEvent(){
     ipcRenderer.on('data', (event, arg) => {
       this._dataDom.innerHTML = this._getHtml(arg);
+      this._bindRemoveEvent();
+      this._bindOpenEvent();
 
       for(const item of arg){
         console.log(item.title);
@@ -65,6 +67,25 @@ class BookmarkView {
     }
 
     ipcRenderer.send('type', type);
+  }
+
+  _bindRemoveEvent(){
+    const removeDoms = document.querySelectorAll('.icon-trash');
+    removeDoms.forEach((dom, index) => {
+      dom.addEventListener('click', () => {
+        ipcRenderer.send('remove', index);
+      })
+    })
+  }
+
+  _bindOpenEvent(){
+    const openDoms = document.querySelectorAll('.clickLink');
+    openDoms.forEach((dom) => {
+      dom.addEventListener('click', (event) => {
+        shell.openExternal(event.target.innerHTML);
+      })
+      
+    })
   }
 }
 
