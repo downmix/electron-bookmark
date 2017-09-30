@@ -69,6 +69,30 @@ class BookmarkApp{
     })*/
     ipcMain.on('type', this._ipcType.bind(this));
     ipcMain.on('paste', this._ipcPaste.bind(this));
+    ipcMain.on('remove', this._ipcRemove.bind(this));
+  }
+
+  _ipcRemove(event, arg){
+    let index = null;
+    // 타입을 골라내고
+    this._data.filter((item, i) => {
+      item.index = i;
+      return item.type === this._type;
+    }).forEach((item, i) => {
+      // 골라낸 것의 인덱스를 찾아서
+      if(i === arg){
+        index = item.index;
+      }
+    });
+
+    // this._data 인덱스를 제거
+    this._data.splice(index, 1);
+
+    // 파일로 저장
+    fs.writeFileSync(DATA_PATH, JSON.stringify(this._data));
+
+    // 업데이트
+    this._update();
   }
   
   _ipcPaste(event, arg){
