@@ -1,4 +1,4 @@
-const {app, Tray, Menu, BrowserWindow, ipcMain, dialog} = require('electron');
+const {app, Tray, Menu, BrowserWindow, ipcMain, dialog, clipboard} = require('electron');
 const path = require('path');
 const fs = require('fs');
 const url = require('url');
@@ -71,11 +71,15 @@ class BookmarkApp{
     ipcMain.on('paste', this._ipcPaste.bind(this));
   }
   
-  async _ipcPaste(event, arg){
-    if(arg.indexOf('https://') > -1 || arg.indexOf('http://') > -1 ){
+  _ipcPaste(event, arg){
+    this._saveUrl(this._type, arg);
+  }
+
+  async _saveUrl(type, copiedUrl){
+    if(copiedUrl.indexOf('https://') > -1 || copiedUrl.indexOf('http://') > -1 ){
       let response = null;
       try{
-        response = await request.get(arg);
+        response = await request.get(copiedUrl);
       }catch(err){
         dialog.showErrorBox('경고', 'url은 맞는데, request가 잘못 됬습니다.');
       }
@@ -83,14 +87,19 @@ class BookmarkApp{
       if(response){
         const title = await getTitle(response.res.text);
         const item = {
-          url: arg,
+          url: copiedUrl,
           title,
-          type: this._type
+          type
         }
 
         this._data.push(item);
         fs.writeFileSync(DATA_PATH, JSON.stringify(this._data));
-        this._update();
+
+        if(type === this._type){
+          //업데이트 할 필요없는 창에서는 안한다
+          this._update();
+        }
+        
       }
     }else{
       dialog.showErrorBox('경고', '잘못된 url 입니다');
@@ -139,13 +148,14 @@ class BookmarkApp{
           {
             label: 'Home',
             click: () => {
-
+              //ignored 코딩스텐다스. async, await 사용할때 비동기 처리를 무시하기 위해 사용
+              const ignored = this._saveUrl('home', clipboard.readText());
             }
           },
           {
             label: 'Github',
             click: () => {
-
+              const ignored = this._saveUrl('github', clipboard.readText());
             }
           }
         ]
